@@ -1,5 +1,7 @@
 name: Canvas Deadline Reminder
 
+run-name: Canvas reminder (${{ github.event.schedule || 'manual' }})
+
 on:
   # 每小时整点检查一次
   schedule:
