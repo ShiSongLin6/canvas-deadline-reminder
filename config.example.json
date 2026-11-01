@@ -1,0 +1,14 @@
+{
+  "canvas_base": "https://YOUR-SCHOOL.instructure.com",
+  "canvas_token": "在这里粘贴 Canvas Personal Access Token",
+  "sct_sendkey": "在这里粘贴 Server酱 SendKey（SCT 开头）",
+  "canvas_token_expires": "2026-12-31",
+  "tz": "Europe/London",
+  "lead_minutes": 120,
+  "window_low": 95,
+  "window_high": 165,
+  "noon_hour": 12,
+  "lookahead_days": 7,
+  "course_filter": [],
+  "skip_locked": true
+}

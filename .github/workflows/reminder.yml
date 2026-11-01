@@ -1,0 +1,76 @@
+name: Canvas Deadline Reminder
+
+on:
+  # 每小时整点检查一次
+  schedule:
+    - cron: '0 * * * *'
+  # 允许手动触发，方便调试
+  workflow_dispatch:
+
+# 不要在同一个时间并发跑两次，避免重复推送
+concurrency:
+  group: canvas-reminder
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 恢复上次的去重记录，避免同一条提醒重复推送
+      - name: Restore dedupe state
+        uses: actions/cache/restore@v4
+        with:
+          path: state.json
+          key: canvas-state-${{ github.run_id }}
+          restore-keys: |
+            canvas-state-
+
+      # 从 Repository secrets / variables 生成 config.json，密钥不会写进仓库
+      - name: Build config.json from secrets
+        env:
+          CANVAS_BASE: ${{ vars.CANVAS_BASE }}
+          CANVAS_TOKEN: ${{ secrets.CANVAS_TOKEN }}
+          SCT_SENDKEY: ${{ secrets.SCT_SENDKEY }}
+          TOKEN_EXPIRES: ${{ vars.CANVAS_TOKEN_EXPIRES }}
+          TZ_NAME: ${{ vars.TZ_NAME }}
+        run: |
+          python - <<'EOF'
+          import json, os
+
+          cfg = json.load(open("config.example.json", encoding="utf-8"))
+          cfg["canvas_base"] = os.environ.get("CANVAS_BASE") or cfg["canvas_base"]
+          cfg["canvas_token"] = os.environ["CANVAS_TOKEN"]
+          cfg["sct_sendkey"] = os.environ["SCT_SENDKEY"]
+          if os.environ.get("TOKEN_EXPIRES"):
+              cfg["canvas_token_expires"] = os.environ["TOKEN_EXPIRES"]
+          if os.environ.get("TZ_NAME"):
+              cfg["tz"] = os.environ["TZ_NAME"]
+
+          with open("config.json", "w", encoding="utf-8") as f:
+              json.dump(cfg, f, ensure_ascii=False, indent=2)
+          print("config.json written")
+          EOF
+
+      - name: Run reminder
+        run: python canvas_reminder.py
+
+      # 保存本次的 state.json，供下次运行恢复
+      - name: Save dedupe state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state.json
+          key: canvas-state-${{ github.run_id }}
