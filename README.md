@@ -4,6 +4,8 @@
 
 Canvas 自带的通知不太靠谱——邮件容易被埋、App 推送经常延迟，而作业截止时间是那种"错过就没了"的东西。这个脚本就是补这个缺口：**在你真正会看到的地方（微信）提醒你，而且只在必要的时候提醒。**
 
+**环境要求**：Python 3.9+ · 唯一第三方依赖 `requests` · 不需要数据库、不需要服务器
+
 ## 特性
 
 - **截止前约 2 小时推一次**，每份作业只推一次，已提交的不推
@@ -46,16 +48,35 @@ Canvas 自带的通知不太靠谱——邮件容易被埋、App 推送经常延
 
 Server酱 免费额度足够个人使用（每天 5 条起，具体以官网为准）。
 
-### 3. 配置并运行
+### 3. 准备运行环境
+
+**要求 Python 3.9 或更高**（脚本用了标准库 `zoneinfo` 处理时区，3.9 才有；开发与测试环境为 3.11）。
+低于 3.9 会在 `from zoneinfo import ZoneInfo` 直接报 `ImportError`。
 
 ```bash
+# 建议用虚拟环境隔离，避免污染系统 Python
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+
 pip install -r requirements.txt
+```
+
+> **为什么仓库里没有 `.venv`？**
+> 虚拟环境里是几百 MB 的平台相关二进制，且 `pyvenv.cfg` 写死了绝对路径，换机器/换系统就报废，无法跨平台复用。
+> 所以只提交 `requirements.txt`（唯一的第三方依赖是 `requests`），任何人 `pip install` 一条命令即可重建。
+> `.venv/` 已列入 `.gitignore`。
+
+### 4. 配置并运行
+
+```bash
 cp config.example.json config.json
 # 编辑 config.json，填入 canvas_base / canvas_token / sct_sendkey
 python canvas_reminder.py --dry-run    # 先看会推什么，不真发
 python canvas_reminder.py --test       # 发一条测试消息到微信
 python canvas_reminder.py              # 正式运行
 ```
+
+`--dry-run` 不需要填 token 就能看输出；`--test` 只验证微信通道是否打通。
 
 ## 配置项
 
