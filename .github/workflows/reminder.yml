@@ -31,6 +31,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # 先用假数据验证判定逻辑，逻辑坏了直接失败，不会真的推送错东西
+      - name: Selftest (no network)
+        run: python canvas_reminder.py --selftest
+
       # 恢复上次的去重记录，避免同一条提醒重复推送
       - name: Restore dedupe state
         uses: actions/cache/restore@v4

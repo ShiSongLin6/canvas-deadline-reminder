@@ -431,6 +431,28 @@ def selftest(cfg):
 
 # ---------------------------------------------------------------- 主流程
 
+def ensure_tz(cfg):
+    """检查时区是否可用。
+
+    Windows 自带 Python 没有 IANA 时区库，zoneinfo 依赖 PyPI 的 tzdata 包。
+    缺了会抛 ZoneInfoNotFoundError，报错信息完全不提该怎么办，所以先拦一下。
+    Linux / macOS / GitHub Actions 一般自带系统时区库，不会走到这里。
+    """
+    name = cfg.get("tz") or "UTC"
+    try:
+        ZoneInfo(name)
+        return True
+    except Exception:
+        if os.name == "nt":
+            log("时区 '%s' 不可用：Windows 需要额外安装 tzdata 包。\n"
+                "  解决办法：pip install tzdata\n"
+                "  （requirements.txt 里已为 Windows 声明该依赖，重装依赖即可）" % name)
+        else:
+            log("时区 '%s' 不可用，请检查 config.json 的 tz 字段。\n"
+                "  常见值：Europe/London、Asia/Shanghai、America/New_York" % name)
+        return False
+
+
 def main():
     argv = sys.argv[1:]
     cfg = dict(DEFAULT_CONFIG)
@@ -440,6 +462,10 @@ def main():
                 cfg.update(json.load(f))
         except Exception as e:
             log("config.json 读取失败：%s" % e)
+
+    if not ensure_tz(cfg):
+        flush_log()
+        return 1
 
     if "--selftest" in argv:
         return selftest(cfg)

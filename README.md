@@ -66,6 +66,10 @@ pip install -r requirements.txt
 > 所以只提交 `requirements.txt`（唯一的第三方依赖是 `requests`），任何人 `pip install` 一条命令即可重建。
 > `.venv/` 已列入 `.gitignore`。
 
+> **Windows 用户注意**：Windows 版 Python 不带 IANA 时区库，`zoneinfo` 需要 PyPI 的 `tzdata` 包。
+> `requirements.txt` 里已用环境标记自动声明（`tzdata; sys_platform == "win32"`），**Linux / macOS / GitHub Actions 不会装它**。
+> 如果手动装过 `requests` 却漏了 `tzdata`，运行时会提示"时区不可用"，`pip install tzdata` 即可。
+
 ### 4. 配置并运行
 
 ```bash
